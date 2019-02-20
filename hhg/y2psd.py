@@ -8,6 +8,8 @@ import sys,argparse
 #
 #sys.path.remove('/usr/share/pyshared')
 #
+import numpy as np
+import re
 from scipy import *
 from scipy import interpolate
 from pylab import *
@@ -23,24 +25,18 @@ XYZ = {'x':1,'y':2,'z':3}
 #
 # def function
 #
-def read_polarization(A,direction):
-    t =[]
-    p=[]
-    istring=A.readline()
-    get_info = False
-    info = ''
-    while istring.endswith('\n'):
-        if istring.startswith('#'):
-            if istring.find('Input file')!=-1:
-                get_info = True
-            if get_info:
-                info = info + istring
-        if istring.startswith(' '):
-            tbl=istring.split()
-            t.append(float(tbl[0]))
-            p.append(float(tbl[direction]))
-        istring=A.readline()
-    return t,array(p),info
+def read_polarization(pfile,direction):
+    data=np.genfromtxt(pfile,comments="#")
+    t_=data[:,0]
+    p_=data[:,direction]
+    pfile.seek(0)
+    plines=pfile.read()
+    pattern=r'\s*Frequency\svalue\s*(\d*)'
+    match = re.search(pattern, plines, re.MULTILINE)
+    freq = float(match.group(1))
+    info = "Laser frequency "+match.group(1)
+    return t_,p_,info
+
 def write_psd(A,f,p,info,lim):
     s = '#\n#'+ LongProgramName+'\n#'+LastModified+'\n#\n' 
     s = s + '# Freq(eV) \t PSD(arb.unit) \n'
